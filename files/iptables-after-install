@@ -1,0 +1,39 @@
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [1:88]
+-A INPUT  -m state --state RELATED,ESTABLISHED -j ACCEPT
+-A INPUT -p icmp  -j ACCEPT
+-A INPUT -i lo  -j ACCEPT
+-A INPUT -d 127.0.0.0/8 ! -i lo  -j REJECT --reject-with icmp-port-unreachable
+-A INPUT -p tcp -m multiport --dports 22  -j ACCEPT
+#tcp 443 HTTPS Incoming connections
+-A INPUT -p tcp -m multiport --ports 443 -m comment --comment "380 Allow tcp 443 HTTPS Incoming connections" -j ACCEPT
+#tcp 80 HTTP Downloading bootstrap files
+-A INPUT -p tcp -m multiport --ports 80 -m comment --comment "381 Allow tcp 80 HTTP Downloading bootstrap files" -j ACCEPT
+#tcp 8080 Subscription Management Services Java connections, managing subscriptions
+-A INPUT -p tcp -m multiport --ports 8080,8443 -m comment --comment "382 Allow tcp 8080 Subscription Management Services Java connections, managing subscriptions" -j ACCEPT
+#tcp 8140 Puppet Incoming Puppet connections with the managed systems
+-A INPUT -p tcp -m multiport --ports 8140 -m comment --comment "383 Allow tcp 8140 Puppet Incoming Puppet connections with the managed systems" -j ACCEPT
+#tcp 9090 Foreman Smart Proxy Foreman Smart Proxy connections with the managed systems
+-A INPUT -p tcp -m multiport --ports 9090 -m comment --comment "384 Allow tcp 9090 Foreman Smart Proxy Foreman Smart Proxy connections with the managed systems" -j ACCEPT
+#udp 69 TFTP The internal capsule and provisioning
+-A INPUT -p udp -m multiport --ports 69 -m comment --comment "385 Allow udp 69 TFTP The internal capsule and provisioning" -j ACCEPT
+#tcp 53 DNS The internal capsule and provisioning
+-A INPUT -p tcp -m multiport --ports 53 -m comment --comment "386 Allow tcp 53 DNS The internal capsule and provisioning" -j ACCEPT
+#udp 53 DNS The internal capsule and provisioning
+-A INPUT -p udp -m multiport --ports 53 -m comment --comment "387 Allow udp 53 DNS The internal capsule and provisioning" -j ACCEPT
+#udp 67,68 DHCP The internal capsule and provisioning
+-A INPUT -p udp -m multiport --ports 67,68 -m comment --comment "388 udp 67,68 DHCP The internal capsule and provisioning" -j ACCEPT
+#tcp 5671 amqp Advanced message queuing protocol connections
+-A INPUT -p tcp -m multiport --ports 5671 -m comment --comment "389 Allow tcp 5671 amqp Advanced message queuing protocol connections" -j ACCEPT
+#tcp 5674 amqp Advanced message queuing protocol connections with managed systems
+-A INPUT -p tcp -m multiport --ports 5674 -m comment --comment "390 Allow tcp 5674 amqp Advanced message queuing protocol connections with managed systems" -j ACCEPT
+#tcp 5646, 5647 qpid/Katello The qpid dispatch routers to communicate with the Katello agent or another Capsule
+-A INPUT -p tcp -m multiport --ports 5646,5647 -m comment --comment "311 Allow tcp 5646, 5647 qpid/Katello The qpid dispatch routers to communicate with the Katello agent or another Capsule" -j ACCEPT
+-A INPUT -m limit --limit 30/min -j LOG --log-prefix "IPTables-dropped: "
+-A INPUT  -j DROP
+-A OUTPUT -o lo -p tcp -m tcp --dport 9200 -m owner --uid-owner 989 -m comment --comment "392 Allow tcp to port 9200 to limit elasticsearch to the foreman user" -j ACCEPT
+-A OUTPUT -o lo -p tcp -m tcp --dport 9200 -m owner --uid-owner 0 -m comment --comment "393 Allow tcp to port 9200 to limit elasticsearch to the root user" -j ACCEPT
+-A OUTPUT -o lo -p tcp -m tcp --dport 9200 -j DROP
+COMMIT

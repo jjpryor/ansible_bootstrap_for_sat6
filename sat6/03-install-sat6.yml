@@ -1,0 +1,36 @@
+---
+- hosts: sat6-node
+  environment:
+    ftp_proxy: http://proxy.itdept.yourorg.local:3128
+    http_proxy: http://proxy.itdept.yourorg.local:3128
+    https_proxy: http://proxy.itdept.yourorg.local:3128
+    no_proxy: yourorg.local,localhost,127.0.0.1
+  vars_prompt:
+  - name: "initial_organization_name"
+    prompt: "Enter desired Initial Organization Name"
+    private: no
+  - name: "initial_location_name"
+    prompt: "Enter desired Initial Loaction Name"
+    private: no
+  - name: "satadmin_username"
+    prompt: "Enter desired Satellite Admin username"
+    private: no
+  - name: "satadmin_password"
+    prompt: "Enter desired Satelite Admin password"
+    private: yes
+  sudo: yes
+  tasks:
+  - name: Run the Sat6 installer
+    command: >
+      katello-installer
+      --foreman-initial-organization="{{initial_organization_name}}"
+      --foreman-initial-location="{{initial_location_name}}"
+      --foreman-admin-username="{{satadmin_username}}"
+      --foreman-admin-password="{{satadmin_password}}"
+      --katello-proxy-url=http://proxy.itdept.yourorg.local
+      --katello-proxy-port=3128
+  - name: Copy new iptables which opens ports for Sat6 after install
+    copy: src=../files/iptables-after-install dest=/etc/sysconfig/iptables owner=root group=root mode=0600
+  - name: Enable proxy in rhsm.conf
+    lineinfile: dest=/etc/rhsm/rhsm.conf regexp=^proxy_hostname line="proxy_hostname = proxy.itdept.yourorg.local"
+    lineinfile: dest=/etc/rhsm/rhsm.conf regexp=^proxy_port line="proxy_port = 3128"
